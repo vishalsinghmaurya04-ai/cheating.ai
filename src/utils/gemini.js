@@ -411,10 +411,6 @@ async function sendToGemma(transcription) {
                 content: fullText.trim()
             });
 
-            if (groqConversationHistory.length > 40) {
-                groqConversationHistory = groqConversationHistory.slice(-40);
-            }
-
             saveConversationTurn(transcription, fullText);
         }
 
