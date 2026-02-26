@@ -217,6 +217,8 @@ export class CustomizeView extends LitElement {
         this.customPrompt = '';
         this.theme = 'dark';
         this.windowSize = 'medium';
+        this.autoHideEnabled = false;
+        this.autoHideDelay = 3;
         this._loadFromStorage();
     }
 
@@ -234,6 +236,8 @@ export class CustomizeView extends LitElement {
             this.customPrompt = prefs.customPrompt ?? '';
             this.theme = prefs.theme ?? 'dark';
             this.windowSize = prefs.windowSize ?? 'medium';
+            this.autoHideEnabled = prefs.autoHideEnabled ?? false;
+            this.autoHideDelay = prefs.autoHideDelay ?? 3;
             if (keybinds) {
                 this.keybinds = { ...this.getDefaultKeybinds(), ...keybinds };
             }
@@ -376,6 +380,26 @@ export class CustomizeView extends LitElement {
         if (window.require) {
             const { ipcRenderer } = window.require('electron');
             await ipcRenderer.invoke('update-window-size', this.windowSize);
+        }
+        this.requestUpdate();
+    }
+
+    async handleAutoHideToggle(e) {
+        this.autoHideEnabled = e.target.checked;
+        await cheatingDaddy.storage.updatePreference('autoHideEnabled', this.autoHideEnabled);
+        if (window.require) {
+            const { ipcRenderer } = window.require('electron');
+            await ipcRenderer.invoke('update-auto-hide', this.autoHideEnabled, this.autoHideDelay);
+        }
+        this.requestUpdate();
+    }
+
+    async handleAutoHideDelayChange(e) {
+        this.autoHideDelay = parseInt(e.target.value, 10);
+        await cheatingDaddy.storage.updatePreference('autoHideDelay', this.autoHideDelay);
+        if (window.require) {
+            const { ipcRenderer } = window.require('electron');
+            await ipcRenderer.invoke('update-auto-hide', this.autoHideEnabled, this.autoHideDelay);
         }
         this.requestUpdate();
     }
@@ -673,6 +697,35 @@ export class CustomizeView extends LitElement {
                             @input=${this.handleFontSizeChange}
                         />
                     </div>
+                    <div class="form-group">
+                        <label class="form-label">Auto-hide Window</label>
+                        <div class="toggle-row">
+                            <input
+                                type="checkbox"
+                                class="toggle-input"
+                                .checked=${this.autoHideEnabled}
+                                @change=${this.handleAutoHideToggle}
+                            />
+                            <label class="toggle-label">Hide window after inactivity</label>
+                        </div>
+                    </div>
+                    ${this.autoHideEnabled ? html`
+                        <div class="form-group slider-wrap">
+                            <div class="slider-header">
+                                <label class="form-label">Auto-hide Delay</label>
+                                <span class="slider-value">${this.autoHideDelay}s</span>
+                            </div>
+                            <input
+                                class="slider-input"
+                                type="range"
+                                min="1"
+                                max="10"
+                                step="1"
+                                .value=${this.autoHideDelay}
+                                @input=${this.handleAutoHideDelayChange}
+                            />
+                        </div>
+                    ` : ''}
                 </div>
             </section>
         `;

@@ -31,6 +31,9 @@ const DEFAULT_PREFERENCES = {
     ollamaModel: 'llama3.1',
     whisperModel: 'Xenova/whisper-small',
     windowSize: 'medium',
+    autoHideEnabled: false,
+    autoHideDelay: 3,
+    responseCache: {},
 };
 
 const DEFAULT_KEYBINDS = null; // null means use system defaults

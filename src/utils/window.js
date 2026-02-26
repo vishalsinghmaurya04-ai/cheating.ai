@@ -299,6 +299,22 @@ function updateGlobalShortcuts(keybinds, mainWindow, sendToRenderer, geminiSessi
 }
 
 function setupWindowIpcHandlers(mainWindow, sendToRenderer, geminiSessionRef) {
+    let autoHideEnabled = false;
+    let autoHideDelay = 3;
+    let autoHideTimer = null;
+
+    const resetAutoHide = () => {
+        if (autoHideTimer) clearTimeout(autoHideTimer);
+        if (autoHideEnabled && mainWindow.isVisible()) {
+            autoHideTimer = setTimeout(() => {
+                if (!mainWindow.isDestroyed()) mainWindow.hide();
+            }, autoHideDelay * 1000);
+        }
+    };
+
+    mainWindow.on('focus', resetAutoHide);
+    mainWindow.on('blur', resetAutoHide);
+
     ipcMain.on('view-changed', (event, view) => {
         if (!mainWindow.isDestroyed()) {
             const primaryDisplay = screen.getPrimaryDisplay();
@@ -376,6 +392,14 @@ function setupWindowIpcHandlers(mainWindow, sendToRenderer, geminiSessionRef) {
         mainWindow.setSize(width, height);
         mainWindow.setPosition(x, 0);
         
+        return { success: true };
+    });
+
+    ipcMain.handle('update-auto-hide', async (event, enabled, delay) => {
+        autoHideEnabled = enabled;
+        autoHideDelay = delay;
+        if (autoHideTimer) clearTimeout(autoHideTimer);
+        if (enabled) resetAutoHide();
         return { success: true };
     });
 }

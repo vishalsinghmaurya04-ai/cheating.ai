@@ -28,6 +28,8 @@ let currentProfile = null;
 let currentCustomPrompt = null;
 let isInitializingSession = false;
 let currentSystemPrompt = null;
+let responseCache = new Map();
+let autoHideTimer = null;
 
 function formatSpeakerResults(results) {
     let text = '';
@@ -238,6 +240,15 @@ async function sendToGroq(transcription) {
         return;
     }
 
+    // Check cache
+    const cacheKey = transcription.trim().toLowerCase();
+    if (responseCache.has(cacheKey)) {
+        const cached = responseCache.get(cacheKey);
+        sendToRenderer('new-response', cached);
+        saveConversationTurn(transcription, cached);
+        return;
+    }
+
     const modelToUse = getModelForToday();
     if (!modelToUse) {
         console.log('All Groq daily limits exhausted');
@@ -332,6 +343,13 @@ async function sendToGroq(transcription) {
                 role: 'assistant',
                 content: cleanedResponse
             });
+
+            // Cache response
+            responseCache.set(cacheKey, cleanedResponse);
+            if (responseCache.size > 100) {
+                const firstKey = responseCache.keys().next().value;
+                responseCache.delete(firstKey);
+            }
 
             saveConversationTurn(transcription, cleanedResponse);
         }
@@ -681,7 +699,7 @@ async function startMacOSAudioCapture(geminiSessionRef) {
 
     console.log('SystemAudioDump started with PID:', systemAudioProc.pid);
 
-    const CHUNK_DURATION = 0.1;
+    const CHUNK_DURATION = 0.05;
     const SAMPLE_RATE = 24000;
     const BYTES_PER_SAMPLE = 2;
     const CHANNELS = 2;

@@ -268,6 +268,32 @@ export class AssistantView extends LitElement {
             overflow: hidden;
         }
 
+        .copy-btn {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: var(--space-xs) var(--space-md);
+            border-radius: 100px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: border-color 0.2s, background var(--transition);
+            flex-shrink: 0;
+            font-size: var(--font-size-xs);
+        }
+
+        .copy-btn:hover {
+            border-color: var(--accent);
+            background: var(--bg-surface);
+        }
+
+        .copy-btn.copied {
+            border-color: var(--success);
+            color: var(--success);
+        }
+
         .analyze-btn:hover:not(.analyzing) {
             border-color: var(--accent);
             background: var(--bg-surface);
@@ -307,6 +333,7 @@ export class AssistantView extends LitElement {
         onSendText: { type: Function },
         shouldAnimateResponse: { type: Boolean },
         isAnalyzing: { type: Boolean, state: true },
+        isCopied: { type: Boolean, state: true },
     };
 
     constructor() {
@@ -316,6 +343,7 @@ export class AssistantView extends LitElement {
         this.selectedProfile = 'interview';
         this.onSendText = () => {};
         this.isAnalyzing = false;
+        this.isCopied = false;
         this._animFrame = null;
     }
 
@@ -478,6 +506,24 @@ export class AssistantView extends LitElement {
             this._responseCountWhenStarted = this.responses.length;
             window.captureManualScreenshot();
         }
+    }
+
+    handleCopyResponse() {
+        const currentResponse = this.getCurrentResponse();
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = this.renderMarkdown(currentResponse);
+        const text = tempDiv.textContent || tempDiv.innerText;
+        
+        navigator.clipboard.writeText(text).then(() => {
+            this.isCopied = true;
+            this.requestUpdate();
+            setTimeout(() => {
+                this.isCopied = false;
+                this.requestUpdate();
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+        });
     }
 
     _startWaveformAnimation() {
@@ -695,6 +741,9 @@ export class AssistantView extends LitElement {
                         @keydown=${this.handleTextKeydown}
                     />
                 </div>
+                <button class="copy-btn ${this.isCopied ? 'copied' : ''}" @click=${this.handleCopyResponse}>
+                    ${this.isCopied ? 'Copied!' : 'Copy'}
+                </button>
                 <button class="analyze-btn ${this.isAnalyzing ? 'analyzing' : ''}" @click=${this.handleScreenAnswer}>
                     <canvas class="analyze-canvas"></canvas>
                     <span class="analyze-btn-content">
