@@ -6,8 +6,13 @@ let mouseEventsIgnored = false;
 
 function createWindow(sendToRenderer, geminiSessionRef) {
     // Get layout preference (default to 'normal')
-    let windowWidth = 1100;
-    let windowHeight = 800;
+    const prefs = storage.getPreferences();
+    const sizes = {
+        small: { width: 800, height: 500 },
+        medium: { width: 1100, height: 800 },
+        large: { width: 1400, height: 900 }
+    };
+    const { width: windowWidth, height: windowHeight } = sizes[prefs.windowSize] || sizes.medium;
 
     const mainWindow = new BrowserWindow({
         width: windowWidth,
@@ -37,7 +42,7 @@ function createWindow(sendToRenderer, geminiSessionRef) {
         { useSystemPicker: true }
     );
 
-    mainWindow.setResizable(false);
+    mainWindow.setResizable(true);
     mainWindow.setContentProtection(true);
     mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
