@@ -216,6 +216,7 @@ export class CustomizeView extends LitElement {
         this.audioMode = 'speaker_only';
         this.customPrompt = '';
         this.theme = 'dark';
+        this.windowSize = 'medium';
         this._loadFromStorage();
     }
 
@@ -232,6 +233,7 @@ export class CustomizeView extends LitElement {
             this.audioMode = prefs.audioMode ?? 'speaker_only';
             this.customPrompt = prefs.customPrompt ?? '';
             this.theme = prefs.theme ?? 'dark';
+            this.windowSize = prefs.windowSize ?? 'medium';
             if (keybinds) {
                 this.keybinds = { ...this.getDefaultKeybinds(), ...keybinds };
             }
@@ -365,6 +367,16 @@ export class CustomizeView extends LitElement {
         this.theme = e.target.value;
         await cheatingDaddy.theme.save(this.theme);
         this.updateBackgroundAppearance();
+        this.requestUpdate();
+    }
+
+    async handleWindowSizeChange(e) {
+        this.windowSize = e.target.value;
+        await cheatingDaddy.storage.updatePreference('windowSize', this.windowSize);
+        if (window.require) {
+            const { ipcRenderer } = window.require('electron');
+            await ipcRenderer.invoke('update-window-size', this.windowSize);
+        }
         this.requestUpdate();
     }
 
@@ -621,6 +633,14 @@ export class CustomizeView extends LitElement {
                         <label class="form-label">Theme</label>
                         <select class="control" .value=${this.theme} @change=${this.handleThemeChange}>
                             ${this.getThemes().map(theme => html`<option value=${theme.value}>${theme.name}</option>`)}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Window Size</label>
+                        <select class="control" .value=${this.windowSize} @change=${this.handleWindowSizeChange}>
+                            <option value="small">Small (800x500)</option>
+                            <option value="medium">Medium (1100x800)</option>
+                            <option value="large">Large (1400x900)</option>
                         </select>
                     </div>
                     <div class="form-group slider-wrap">

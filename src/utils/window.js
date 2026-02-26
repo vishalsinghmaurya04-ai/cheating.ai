@@ -358,6 +358,26 @@ function setupWindowIpcHandlers(mainWindow, sendToRenderer, geminiSessionRef) {
         // This handler is kept for compatibility but is a no-op now.
         return { success: true };
     });
+
+    ipcMain.handle('update-window-size', async (event, size) => {
+        if (mainWindow.isDestroyed()) return { success: false };
+        
+        const sizes = {
+            small: { width: 800, height: 500 },
+            medium: { width: 1100, height: 800 },
+            large: { width: 1400, height: 900 }
+        };
+        
+        const { width, height } = sizes[size] || sizes.medium;
+        const primaryDisplay = screen.getPrimaryDisplay();
+        const { width: screenWidth } = primaryDisplay.workAreaSize;
+        const x = Math.floor((screenWidth - width) / 2);
+        
+        mainWindow.setSize(width, height);
+        mainWindow.setPosition(x, 0);
+        
+        return { success: true };
+    });
 }
 
 module.exports = {
